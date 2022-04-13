@@ -1,0 +1,49 @@
+
+/* css | https://seismicatest.library.mcgill.ca/$$$call$$$/page/page/css?name=bootstrapTheme-readable */
+/* seismica colors | #123467 [dark blue] #ffffff [white] #000000 [black] #65C18C [sea green] #cecd24 [citrine] #df2935 [red] */
+
+/* overall things: body font, color, weight */
+body {
+  font: 16px/1.5em "Overpass", "Open Sans", Helvetica, sans-serif;
+  color: #333;
+  font-weight: 300;
+}
+
+/* restyle buttons */
+.btn-primary {
+  /* background-color: #4582ec; */
+  /* border-color: #4582ec; */
+  background-color: #123467;
+  border-color: #123467;
+}
+
+
+/* restyle hyperlink color */
+a {
+  /* color: #06c; */
+  color: #123467;
+}
+
+
+/* footer style: background color, text color */
+footer[role="contentinfo"] {
+  /* background: #eee; */
+  background: #65C18C;
+  color: #000000;
+}
+
+
+/* header/nav bar styling */
+.navbar-default, .header_view {
+  /* background-color: #fff; */
+  /* border-color: #ddd; */
+  background-color: #65C18C;
+  border-color: #65C18C;
+}
+
+.navbar-default .nav > li > a, .header_view .nav > li > a {
+  /* color: #4582ec; */
+  color: #123467;
+  font-weight: bold;
+}
+
