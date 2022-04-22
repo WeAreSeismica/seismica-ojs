@@ -118,10 +118,9 @@ if __name__ == '__main__':
             help='is this guidelines or not? True[1]/False[0]')
     args = parser.parse_args()
 
-    if args.ifile == None:
+    ifile = args.ifile
+    if ifile == None:
         ifile = input('Enter path to input file: ') or 'TaskForce2_Guidelines.html'
-    else:
-        ifile = args.ifile
     assert os.path.isfile(ifile),'file does not exist'
 
     if args.isguide == None:
