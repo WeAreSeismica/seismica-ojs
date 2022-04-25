@@ -138,16 +138,17 @@ if __name__ == '__main__':
 
     # set some things that differ between guidelines and editorial policies
     if isguide:
-        cmt_class = 'c11'
+        cmt_class = ['c11','c7']
         translate = {'c23':soup.new_tag('b')}  # google docs translations for span classes
         ofile = 'out_guides.html'
     else:
-        cmt_class = 'c13'
+        cmt_class = ['c13']
         translate = {}
         ofile = 'out_edpol.html'
 
     # strip out any comments from the doc
-    soup = strip_comments(soup,cmt_class=cmt_class)
+    for c in cmt_class:
+        soup = strip_comments(soup,cmt_class=c)
 
     # clean up span formatting, not needed for website (mostly pertains to guidelines)
     soup = clean_spans(soup,translate=translate)
@@ -183,7 +184,6 @@ if __name__ == '__main__':
     hdr1, hdr2 = get_h1_h2(ingredients)
 
     # SPLIT HERE for ed pol vs guidelines in main loop
-
     if isguide:
         for i in range(len(hdr1)-1):  # looping level 1 (Authors, Reviewers, Editors)
             # put in h1 header for marking
@@ -229,6 +229,7 @@ if __name__ == '__main__':
                         ing = ingredients[k]
                     except IndexError:  # reached end of list, hopefully
                         break
+
                     # if we don't break things, move on to check this element
                     if ing.name == 'table': # this should be the reviewer recommendations table
                         ing.attrs['class'] = 'table'
@@ -254,7 +255,27 @@ if __name__ == '__main__':
                     else:
                         idivtext.append(ing)
 
-    else:
+                # scan back to try and fix ordered lists that get fractured in odd ways
+                # doesn't work yet, still skipping things
+#               ols = bowl.find_all('ol')
+#               for ol in ols:
+#                   a = ol
+#                   if ol.attrs['start'] != '1':
+#                       prev = a.previous_sibling
+#                       if prev.name != 'ol' and prev.name != 'div':
+#                           a = prev
+#                       else:
+#                           if prev.name == 'div':
+#                               ol.attrs['start'] = '1'  # this is a weird case, just reset start
+#                           if prev.name == 'ol':
+#                               b = prev.next_sibling.extract()
+#                               if b == ol:
+#                                   for c in b.children:
+#                                       prev.append(c)
+#                               else:
+#                                   prev.append(b)
+
+    else:  # editorial policies
         # start building the accordion for everything
         acc_id = 'acc_0' # there's only one accordion for all edpol (the zeroth one)
         accord = bowl.new_tag('div'); accord.attrs = {'id':acc_id,'class':'accordion'}
