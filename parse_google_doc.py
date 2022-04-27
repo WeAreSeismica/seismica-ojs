@@ -10,10 +10,8 @@ import os, sys
 # for OJS site with (nested?) dropdowns
 #
 # TODO:
-    # find consecutive <b> tags and combine? Or don't even bother because they are hella weird?
-    # figure out parsing for nested lists (start != 1) - scan backwards, unless heading
-    # triple nesting (References in author guidelines, in particular)
-    # get rid of superflous/possibly actually bad class tags
+    # parse the style header, convert things so that bold tags etc are preserved
+    # broken nested lists (start != 1) - if no prior ol, reset start
     # nested accordions? at least for one spot in ed pol?
     # URLs - do we care that google prefixes them?
     # put three guidelines sections into three files? or just don't
@@ -133,7 +131,8 @@ if __name__ == '__main__':
     text = f.readline()  # google docs outputs html as one single line, weirdly
     f.close()
     soup = BeautifulSoup(text,'html.parser')  # parse to a soup
-    soup.head.decompose()  # get rid of the long css/google doc styling string that we will not use
+    #soup.head.decompose()  # get rid of the long css/google doc styling string that we will not use
+    header = soup.head.extract()
     soup.img.decompose()  # get rid of the header image (seismica logo)
 
     # set some things that differ between guidelines and editorial policies
@@ -151,7 +150,8 @@ if __name__ == '__main__':
         soup = strip_comments(soup,cmt_class=c)
 
     # clean up span formatting, not needed for website (mostly pertains to guidelines)
-    soup = clean_spans(soup,translate=translate)
+    #soup = clean_spans(soup,translate=translate)
+    #soup = clean_spans(soup)
 
     # clean out empty tags etc
     soup = clean_soup(soup)  # not all apply to ed pol, but that's actually fine
@@ -336,6 +336,8 @@ if __name__ == '__main__':
                 else:
                     idivtext.append(ing)
 
+    # put the header back in
+    bowl.body.insert_before(header)
     # write
     bowl.smooth()
     f = open(ofile,'w')
