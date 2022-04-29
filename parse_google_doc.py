@@ -11,7 +11,7 @@ import os, sys
 # for OJS site with (nested?) dropdowns
 #
 # TODO:
-    # broken nested lists (start != 1) - if no prior ol, reset start
+    # re-combine oddly segmented nested lists? Might be more trouble than it's worth
     # nested accordions? at least for one spot in ed pol?
     # URLs - do we care that google prefixes them?
 #
@@ -166,6 +166,12 @@ if __name__ == '__main__':
     else:
         isguide = bool(args.isguide)
 
+    # set ofile names
+    if isguide:
+        ofile = 'out_guides.html'
+    else:
+        ofile = 'out_edpol.html'
+
     # then:
     f = open(ifile,'r') # open html file
     text = f.readline()  # google docs outputs html as one single line, weirdly
@@ -187,12 +193,6 @@ if __name__ == '__main__':
 
     # figure out what the comment div class name is
     cmt_class = find_comment_class(soup)
-
-    # set ofile names
-    if isguide:
-        ofile = 'out_guides.html'
-    else:
-        ofile = 'out_edpol.html'
 
     # strip out any comments from the doc
     soup = strip_comments(soup,cmt_class=cmt_class)
@@ -302,25 +302,15 @@ if __name__ == '__main__':
                     else:
                         idivtext.append(ing)
 
-                # scan back to try and fix ordered lists that get fractured in odd ways
-                # doesn't work yet, still skipping things
-#               ols = bowl.find_all('ol')
-#               for ol in ols:
-#                   a = ol
-#                   if ol.attrs['start'] != '1':
-#                       prev = a.previous_sibling
-#                       if prev.name != 'ol' and prev.name != 'div':
-#                           a = prev
-#                       else:
-#                           if prev.name == 'div':
-#                               ol.attrs['start'] = '1'  # this is a weird case, just reset start
-#                           if prev.name == 'ol':
-#                               b = prev.next_sibling.extract()
-#                               if b == ol:
-#                                   for c in b.children:
-#                                       prev.append(c)
-#                               else:
-#                                   prev.append(b)
+                # check <ol>s within this card; if the first one has start != 1, reset it
+                # (this happens at one particular point in the reviewer guidelines at the moment)
+                ols = idivtext.find_all('ol')
+                if len(ols) > 0:
+                    ol = ols[0]
+                    if ol.attrs['start'] != '1':
+                        ol.attrs['start'] = '1'
+            
+
 
     else:  # editorial policies
         # start building the accordion for everything
@@ -338,9 +328,7 @@ if __name__ == '__main__':
             ibutton.attrs['data-target'] = '#collapse%02d' % ic
             ibutton.attrs['aria-controls'] = 'collapse%02d' % ic
             ispan.wrap(ibutton)
-            #ih1 = copy(h1); ibutton.wrap(ih1)
             idivhead = copy(divhead); idivhead.attrs['id'] = 'heading%02d' % ic
-            #ih1.wrap(idivhead)
             ibutton.wrap(idivhead)
 
             idivcoll = copy(divcoll)
@@ -353,7 +341,6 @@ if __name__ == '__main__':
             idivcoll.insert(0,idivtext)
 
             for k in range(hdr1[ic]+1,hdr1[ic+1]):
-                #print(hdr1[i],hdr2_use[j],k)
                 try:
                     ing = ingredients[k]
                 except IndexError:  # reached end of list, hopefully
@@ -383,8 +370,6 @@ if __name__ == '__main__':
                 else:
                     idivtext.append(ing)
 
-    # put the header back in
-    #bowl.body.insert_before(header)
     # write
     bowl.smooth()
     f = open(ofile,'w')
