@@ -13,4 +13,5 @@ The current version of the script is a bit brittle because google apparently doe
 ### dependencies
 - [BeautifulSoup 4](https://www.crummy.com/software/BeautifulSoup/bs4/doc/)
 - numpy
+- [cssutils](https://cthedot.de/cssutils/)
 - re, os, sys, copy, argparse
