@@ -14,6 +14,7 @@ import os, sys
     # re-combine oddly segmented nested lists? Might be more trouble than it's worth
     # nested accordions? at least for one spot in ed pol?
     # URLs - do we care that google prefixes them?
+    # elements that have more than 1 formatting style (eg bold *and* italic)
 #
 # goal: something that looks like the following
 #
@@ -183,21 +184,19 @@ if __name__ == '__main__':
 
     # deal with css style in header, to some extent
     style = csu.parseString(header.style.text)  # parses to CSSStyleSheet object
-    # we will only look at .c# styles, find italics, bold, and underline (by kwd and font-weight)
+    # we will only look at .c# styles, and find italics, bold, and underline
     #   [info on what is looked for/translated is in css_keys before __main__]
     # we're skipping all the hyper-specific list element formatting at the moment
     translate_tags = class_translate(style,css_keys)
     translate = {}  # need to actually make soup tags to wrap things in; do this outside of function
     for k in translate_tags.keys():
-        translate[k] = soup.new_tag(translate_tags[k][0])  # NOTE only first tag for now
+        translate[k] = soup.new_tag(translate_tags[k][0])  # NOTE only first tag in list for now
 
-    # figure out what the comment div class name is
+    # figure out what the comment div class name is, strip out comments
     cmt_class = find_comment_class(soup)
-
-    # strip out any comments from the doc
     soup = strip_comments(soup,cmt_class=cmt_class)
 
-    # clean up span formatting, not needed for website (mostly pertains to guidelines)
+    # clean up span formatting, translate to html tags since we can't use css header
     soup = clean_spans(soup,translate=translate)
 
     # clean out empty tags etc
@@ -310,8 +309,6 @@ if __name__ == '__main__':
                     if ol.attrs['start'] != '1':
                         ol.attrs['start'] = '1'
             
-
-
     else:  # editorial policies
         # start building the accordion for everything
         acc_id = 'acc_0' # there's only one accordion for all edpol (the zeroth one)
