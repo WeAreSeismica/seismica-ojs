@@ -38,10 +38,9 @@ import os, sys
 #
 ####
 
-def strip_comments(soup,cmt_class='c7'):
+def strip_comments(soup,cmt_class):
     """
     decompose divs and <a>s from comments
-    c11 for guidelines, c13 for editorial policies; no idea why they are different
     """
     for div in soup.find_all('div',class_=cmt_class):
         div.decompose()
