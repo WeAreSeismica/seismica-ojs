@@ -1,6 +1,7 @@
 import numpy as np
 import re
 from bs4 import BeautifulSoup
+import cssutils as csu
 from copy import copy
 from argparse import ArgumentParser
 import os, sys
@@ -10,12 +11,9 @@ import os, sys
 # for OJS site with (nested?) dropdowns
 #
 # TODO:
-    # parse the style header, convert things so that bold tags etc are preserved
     # broken nested lists (start != 1) - if no prior ol, reset start
     # nested accordions? at least for one spot in ed pol?
     # URLs - do we care that google prefixes them?
-    # put three guidelines sections into three files? or just don't
-    # MORE COMMENTS for bits that are likely to break in the future if formatting changes
 #
 # goal: something that looks like the following
 #
@@ -40,7 +38,7 @@ import os, sys
 #
 ####
 
-def strip_comments(soup,cmt_class='c11'):
+def strip_comments(soup,cmt_class='c7'):
     """
     decompose divs and <a>s from comments
     c11 for guidelines, c13 for editorial policies; no idea why they are different
@@ -50,6 +48,16 @@ def strip_comments(soup,cmt_class='c11'):
     for a in soup.find_all(id=re.compile('^cmnt')):
         a.decompose()
     return soup
+
+def find_comment_class(soup):
+    """
+    figure out what the css tag is for divs around comments so we can strip all of them out
+    """
+    divs = soup.find_all('div')
+    for d in divs:
+        aas = d.find_all(id=re.compile('^cmnt'))
+        if len(aas) > 0:
+            return d.attrs['class']  # assume all comments are the same class (seems safe)
 
 def clean_soup(soup,h6=True,notext=True,aempty=True,sup=True):
     """
@@ -103,6 +111,39 @@ def get_h1_h2(ingredients):
     hdr1 = np.array(hdr1); hdr2 = np.array(hdr2)
     return hdr1, hdr2
 
+def class_translate(sheet,css_keys,match='.c'):
+    """
+    scan a stylesheet for (.c#) rules and pick out a particular set of css keys
+    return dict of (.c#) keys and html tags that they should get, based on input css_keys dict
+    """
+    translate = {}
+    for rule in sheet:  # loop all rules
+        try:
+            if rule.selectorText.startswith(match):  # find rules matching name criterion
+                ruledict = {}
+                for k in css_keys.keys():  # find style tags that match css_keys top level
+                    if k in rule.style.keys():
+                        ruledict[k] = rule.style[k]
+                rulelist = []
+                if ruledict != {}:
+                    for k in ruledict.keys():  # check whether tag contents need to be translated
+                        if ruledict[k] in css_keys[k].keys():
+                            rulelist.append(css_keys[k][ruledict[k]])
+                if len(rulelist) > 0:
+                    # if tag needs translation, translate it
+                    # NOTE we strip leading . from the rule name
+                    translate[rule.selectorText.split('.')[-1]] = rulelist
+        except AttributeError:
+            pass  # no selectorText, probably the link at the top
+    return translate
+
+# here are some css tags that we want to translate, and how we want to translate them
+# NOTE <u> is maybe not best practice? Also here I think it only applies to hyperlinks.
+css_keys = {'font-weight':{'700':'strong'},\
+            'font-style':{'italic':'em'},\
+            'text-decoration':{'underline':'u'},\
+            'background-color':{'#ff0':'mark'}}
+
 if __name__ == '__main__':
 
     # start by exporting google doc as html and extracting the html file from the zip archive
@@ -131,27 +172,34 @@ if __name__ == '__main__':
     text = f.readline()  # google docs outputs html as one single line, weirdly
     f.close()
     soup = BeautifulSoup(text,'html.parser')  # parse to a soup
-    #soup.head.decompose()  # get rid of the long css/google doc styling string that we will not use
     header = soup.head.extract()
     soup.img.decompose()  # get rid of the header image (seismica logo)
+        # (only for guidelines, but doesn't hurt ed pol b/c there are no images in it)
 
-    # set some things that differ between guidelines and editorial policies
+    # deal with css style in header, to some extent
+    style = csu.parseString(header.style.text)  # parses to CSSStyleSheet object
+    # we will only look at .c# styles, find italics, bold, and underline (by kwd and font-weight)
+    #   [info on what is looked for/translated is in css_keys before __main__]
+    # we're skipping all the hyper-specific list element formatting at the moment
+    translate_tags = class_translate(style,css_keys)
+    translate = {}  # need to actually make soup tags to wrap things in; do this outside of function
+    for k in translate_tags.keys():
+        translate[k] = soup.new_tag(translate_tags[k][0])  # NOTE only first tag for now
+
+    # figure out what the comment div class name is
+    cmt_class = find_comment_class(soup)
+
+    # set ofile names
     if isguide:
-        cmt_class = ['c11','c7']
-        translate = {'c23':soup.new_tag('b')}  # google docs translations for span classes
         ofile = 'out_guides.html'
     else:
-        cmt_class = ['c13']
-        translate = {}
         ofile = 'out_edpol.html'
 
     # strip out any comments from the doc
-    for c in cmt_class:
-        soup = strip_comments(soup,cmt_class=c)
+    soup = strip_comments(soup,cmt_class=cmt_class)
 
     # clean up span formatting, not needed for website (mostly pertains to guidelines)
-    #soup = clean_spans(soup,translate=translate)
-    #soup = clean_spans(soup)
+    soup = clean_spans(soup,translate=translate)
 
     # clean out empty tags etc
     soup = clean_soup(soup)  # not all apply to ed pol, but that's actually fine
@@ -337,7 +385,7 @@ if __name__ == '__main__':
                     idivtext.append(ing)
 
     # put the header back in
-    bowl.body.insert_before(header)
+    #bowl.body.insert_before(header)
     # write
     bowl.smooth()
     f = open(ofile,'w')
