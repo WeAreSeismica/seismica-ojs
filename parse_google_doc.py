@@ -1,9 +1,10 @@
 import numpy as np
-import re
 from bs4 import BeautifulSoup
 import cssutils as csu
 from copy import copy
 from argparse import ArgumentParser
+import re
+import urllib
 import os, sys
 
 ####
@@ -13,7 +14,6 @@ import os, sys
 # TODO:
     # re-combine oddly segmented nested lists? Might be more trouble than it's worth
     # nested accordions? at least for one spot in ed pol?
-    # URLs - do we care that google prefixes them?
     # elements that have more than 1 formatting style (eg bold *and* italic)
 #
 # goal: something that looks like the following
@@ -143,6 +143,12 @@ css_keys = {'font-weight':{'700':'strong'},\
             'font-style':{'italic':'em'},\
             'text-decoration':{'underline':'u'},\
             'background-color':{'#ff0':'mark'}}
+
+def _has_href(tag):
+    """
+    function to pass to find_all() to get all hyperlinks
+    """
+    return tag.has_attr('href')
 
 if __name__ == '__main__':
 
@@ -366,6 +372,11 @@ if __name__ == '__main__':
 
                 else:
                     idivtext.append(ing)
+
+    # unwrap hyperlinks that google has wrapped with extra stuff
+    links = bowl.find_all(_has_href)
+    for link in links:
+        link.attrs['href'] = urllib.parse.unquote(link.attrs['href'].split('?q=')[1].split('&')[0])
 
     # write
     bowl.smooth()
