@@ -378,6 +378,8 @@ if __name__ == '__main__':
     # unwrap hyperlinks that google has wrapped with extra stuff
     links = bowl.find_all(_has_href)
     for link in links:
+        if link.attrs['href'].startswith('#ftnt') or link.attrs['href'].startswith('mailto'):
+            continue
         link.attrs['href'] = urllib.parse.unquote(link.attrs['href'].split('?q=')[1].split('&')[0])
 
     # write
