@@ -14,7 +14,6 @@ import os, sys
 # TODO:
     # re-combine oddly segmented nested lists? Might be more trouble than it's worth
     # nested accordions? at least for one spot in ed pol?
-    # elements that have more than 1 formatting style (eg bold *and* italic)
 #
 # goal: something that looks like the following
 #
@@ -91,7 +90,8 @@ def clean_spans(soup,translate={}):
     for sp in soup.find_all('span'):
         for k in translate.keys():
             if 'class' in sp.attrs and k in sp.attrs['class']:
-                sp.wrap(copy(translate[k]))
+                for a in translate[k]:
+                    sp.wrap(copy(a))
         sp.unwrap()
     return soup
 
@@ -196,7 +196,9 @@ if __name__ == '__main__':
     translate_tags = class_translate(style,css_keys)
     translate = {}  # need to actually make soup tags to wrap things in; do this outside of function
     for k in translate_tags.keys():
-        translate[k] = soup.new_tag(translate_tags[k][0])  # NOTE only first tag in list for now
+        translate[k] = []
+        for a in translate_tags[k]:
+            translate[k].append(soup.new_tag(a))
 
     # figure out what the comment div class name is, strip out comments
     cmt_class = find_comment_class(soup)
