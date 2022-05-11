@@ -137,6 +137,20 @@ def class_translate(sheet,css_keys,match='.c'):
             pass  # no selectorText, probably the link at the top
     return translate
 
+def ol_info(idivtext):
+    """
+    get start numbers and #items in each ol in a chunk of stuff
+    """
+    ols = idivtext.find_all('ol',recursive=False)
+    if len(ols) > 1:
+        lis = np.zeros(len(ols),dtype=int); sts = np.zeros(len(ols),dtype=int)
+        for io,ol in enumerate(ols):
+            # count li elements at level 1
+            lis[io] = len(ol.find_all('li',recursive=False))
+            # get start #s
+            sts[io] = int(ol.attrs['start'])
+    return ols, sts, lis
+
 # here are some css tags that we want to translate, and how we want to translate them
 # NOTE <u> is maybe not best practice? Also here I think it only applies to hyperlinks.
 css_keys = {'font-weight':{'700':'strong'},\
@@ -316,7 +330,43 @@ if __name__ == '__main__':
                     ol = ols[0]
                     if ol.attrs['start'] != '1':
                         ol.attrs['start'] = '1'
-            
+
+                # check if we need to recursively nest any ols
+                if len(ols) > 1:
+                    ol_list,sts,lis = ol_info(idivtext)
+                    # see if sts and li are consistent with each other
+                    whose = np.cumsum(lis)[:-1] + 1 == sts[1:]
+                    if np.all(whose):  # li summation matches          
+                        # everything is numbered ok, but intermediate items may be out of list
+                        # for each pair of ols in ol_list, check if there's anything in between
+                        # if so, extract and append to ol before it
+                        for io in range(len(ol_list)-1):
+                            if ol_list[io].next_sibling.name != 'ol':  # something to append
+                                for g in ol_list[io].next_siblings:
+                                    if g == ol_list[io+1]:
+                                        break
+                                    else:
+                                        toadd = g.extract()
+                                        ol_list[io].append(toadd)
+                        # for now, don't worry about combining ol chunks since starts are ok
+                    else:  # there's a mis-nested thing here
+                        # start at first mismatch, skip elements until things do align
+                        # then take those removed elements and tack them onto the previous ol
+                        to_skip = []
+                        test_sts = copy(sts); test_lis = copy(lis)
+                        while True:
+                            to_skip.append(np.where(whose == False)[0][0] + 1)
+                            test_sts = np.delete(test_sts,to_skip)
+                            test_lis = np.delete(test_lis,to_skip)
+                            whose = np.cumsum(test_lis)[:-1]+1 == test_sts[1:]
+                            print(to_skip,test_sts,test_lis,whose)
+                            if whose[to_skip[-1]]:
+                                break
+
+                        to_skip = to_skip + np.arange(to_skip)
+
+                        
+
     else:  # editorial policies
         # start building the accordion for everything
         acc_id = 'acc_0' # there's only one accordion for all edpol (the zeroth one)
