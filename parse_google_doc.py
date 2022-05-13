@@ -137,7 +137,7 @@ def class_translate(sheet,css_keys,match='.c'):
             pass  # no selectorText, probably the link at the top
     return translate
 
-def ol_info(idivtext):
+def _ol_info(idivtext):
     """
     get start numbers and #items in each ol in a chunk of stuff
     """
@@ -150,6 +150,42 @@ def ol_info(idivtext):
             # get start #s
             sts[io] = int(ol.attrs['start'])
     return ols, sts, lis
+
+def check_whose(idivtext):
+    """
+    test whether any bits of <ol> set are un-nested
+    """
+    ols = idivtext.find_all('ol',recursive=False)
+    # check if we need to recursively nest any ols
+    if len(ols) > 1:
+        ol_list,sts,lis = _ol_info(idivtext)
+        # see if sts and li are consistent with each other
+        whose = np.cumsum(lis)[:-1] + 1 == sts[1:] 
+        return np.all(whose)
+    else:
+        return True  # only one <ol>, everything is fine (or had better be)
+
+
+def nest_in_between(idivtext):
+    """
+    nest extra bits (<p> etc) that fell between chunks of <ol>
+    """
+    ols = idivtext.find_all('ol',recursive=False)
+    # check if we need to recursively nest any ols
+    if len(ols) > 1:
+        ol_list,sts,lis = _ol_info(idivtext)
+        # see if sts and li are consistent with each other
+        whose = np.cumsum(lis)[:-1] + 1 == sts[1:]
+        for io in range(len(ol_list)-1):
+            if ol_list[io].next_sibling.name != 'ol':  # something to append
+                for g in ol_list[io].next_siblings:
+                    if g == ol_list[io+1]:
+                        break
+                    else:
+                        toadd = g.extract()
+                        ol_list[io].append(toadd)
+
+    return idivtext
 
 # here are some css tags that we want to translate, and how we want to translate them
 # NOTE <u> is maybe not best practice? Also here I think it only applies to hyperlinks.
@@ -332,40 +368,28 @@ if __name__ == '__main__':
                         ol.attrs['start'] = '1'
 
                 # check if we need to recursively nest any ols
-                if len(ols) > 1:
-                    ol_list,sts,lis = ol_info(idivtext)
-                    # see if sts and li are consistent with each other
+                if check_whose(idivtext):
+                    idivtext = nest_in_between(idivtext)
+                else:
+                    # there's a mis-nested thing here; deal with it
+                    iq = False
+                    ol_list,sts,lis = _ol_info(idivtext)
                     whose = np.cumsum(lis)[:-1] + 1 == sts[1:]
-                    if np.all(whose):  # li summation matches          
-                        # everything is numbered ok, but intermediate items may be out of list
-                        # for each pair of ols in ol_list, check if there's anything in between
-                        # if so, extract and append to ol before it
-                        for io in range(len(ol_list)-1):
-                            if ol_list[io].next_sibling.name != 'ol':  # something to append
-                                for g in ol_list[io].next_siblings:
-                                    if g == ol_list[io+1]:
-                                        break
-                                    else:
-                                        toadd = g.extract()
-                                        ol_list[io].append(toadd)
-                        # for now, don't worry about combining ol chunks since starts are ok
-                    else:  # there's a mis-nested thing here
-                        # start at first mismatch, skip elements until things do align
-                        # then take those removed elements and tack them onto the previous ol
-                        to_skip = []
-                        test_sts = copy(sts); test_lis = copy(lis)
-                        while True:
-                            to_skip.append(np.where(whose == False)[0][0] + 1)
-                            test_sts = np.delete(test_sts,to_skip)
-                            test_lis = np.delete(test_lis,to_skip)
-                            whose = np.cumsum(test_lis)[:-1]+1 == test_sts[1:]
-                            print(to_skip,test_sts,test_lis,whose)
-                            if whose[to_skip[-1]]:
-                                break
+                    while not iq:
+                        olstart = ol_list[np.where(whose == False)[0][0]]  # this should not work??
+                        iadd = True
+                        while iadd:
+                            toadd = olstart.next_sibling.extract()
+                            if toadd.name == 'ol':
+                                iadd = False
+                            olstart.append(toadd)
+                        ol_list,sts,lis = _ol_info(idivtext)
+                        whose = np.cumsum(lis)[:-1] + 1 == sts[1:]
+                        if np.all(whose):
+                            iq = True
 
-                        to_skip = to_skip + np.arange(to_skip)
-
-                        
+                # nest extra bits (<p> etc) one more time now that numbers are matched
+                idivtext = nest_in_between(idivtext)
 
     else:  # editorial policies
         # start building the accordion for everything
@@ -424,6 +448,35 @@ if __name__ == '__main__':
 
                 else:
                     idivtext.append(ing)
+            # check <ol>s within this card; if the first one has start != 1, reset it
+            # (this happens at one particular point in the reviewer guidelines at the moment)
+            ols = idivtext.find_all('ol')
+            if len(ols) > 0:
+                ol = ols[0]
+                if ol.attrs['start'] != '1':
+                    ol.attrs['start'] = '1'
+
+            # check if we need to recursively nest any ols
+            if check_whose(idivtext):
+                idivtext = nest_in_between(idivtext)
+            else:
+                # there's a mis-nested thing here; deal with it
+                iq = False
+                while not iq:
+                    olstart = ol_list[np.where(whose == False)[0][0]]  # this should not work??
+                    iadd = True
+                    while iadd:
+                        toadd = olstart.next_sibling.extract()
+                        if toadd.name == 'ol':
+                            iadd = False
+                        olstart.append(toadd)
+                    ol_list,sts,lis = ol_info(idivtext)
+                    whose = np.cumsum(lis)[:-1] + 1 == sts[1:]
+                    if np.all(whose):
+                        iq = True
+
+            # nest extra bits (<p> etc) one more time now that numbers are matched
+            idivtext = nest_in_between(idivtext)
 
     # unwrap hyperlinks that google has wrapped with extra stuff
     links = bowl.find_all(_has_href)
