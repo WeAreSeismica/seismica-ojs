@@ -1,49 +1,233 @@
 
 /* css | https://seismicatest.library.mcgill.ca/$$$call$$$/page/page/css?name=bootstrapTheme-readable */
-/* seismica colors | #123467 [dark blue] #ffffff [white] #000000 [black] #65C18C [sea green] #cecd24 [citrine] #df2935 [red] */
-
-/* overall things: body font, color, weight */
-body {
-  font: 16px/1.5em "Overpass", "Open Sans", Helvetica, sans-serif;
-  color: #333;
-  font-weight: 300;
-}
+/* seismica colors | #123466 [dark blue] #ffffff [white] #000000 [black] #65C18C [sea green] #cecd24 [citrine] #df2935 [red] */
 
 /* restyle buttons */
 .btn-primary {
   /* background-color: #4582ec; */
   /* border-color: #4582ec; */
   background-color: #123467;
-  border-color: #123467;
+  border-color: #fff;
+}
+
+.btn-primary:hover {
+  background-color: #65C18C;
+  color: #000;
+  border-color: #fff;
 }
 
 
 /* restyle hyperlink color */
 a {
   /* color: #06c; */
+  /* color: #123467; */
+  color: #65C18C;
+}
+
+a:hover {
+  /* color: #65C18C; */
   color: #123467;
 }
 
-
-/* footer style: background color, text color */
-footer[role="contentinfo"] {
-  /* background: #eee; */
-  background: #65C18C;
-  color: #000000;
+aside#sidebar a {
+  color: #123467;
 }
 
+aside#sidebar a:hover {
+  color: #65C18C;
+}
 
 /* header/nav bar styling */
 .navbar-default, .header_view {
-  /* background-color: #fff; */
-  /* border-color: #ddd; */
-  background-color: #65C18C;
-  border-color: #65C18C;
+  background-color: #123467;
+  /* border-color: #123467; */
+  border: none;
+  color: #fff;
+  border-radius: 0;
 }
 
-.navbar-default .nav > li > a, .header_view .nav > li > a {
-  /* color: #4582ec; */
-  color: #123467;
+/* top user navigation */
+ul#navigationUser li a {
+  color: #65C18C;
   font-weight: bold;
 }
 
+div.navbar-header :is(h1, div).site-name {
+  position: absolute;
+  top: 0.5em;
+}
+
+div.navbar-header :is(h1, div).site-name a.navbar-brand-logo {
+  padding: 0;
+  padding-left: 15px;
+  height: 120px;
+}
+
+div.navbar-header :is(h1, div).site-name a.navbar-brand-logo img {
+  height: 100%;
+}
+
+/* overriding fluid container settings for header */
+header#headerNavigationContainer div.container-fluid {
+  margin-right: auto;
+  margin-left: auto;
+}
+
+@media (min-width: 768px) {
+  header#headerNavigationContainer div.container-fluid {
+    width: 750px;
+  }
+}
+
+@media (min-width: 992px) {
+  header#headerNavigationContainer div.container-fluid {
+    width: 970px;
+  }
+}
+
+@media (min-width: 1200px) {
+  header#headerNavigationContainer div.container-fluid {
+    width: 1170px;
+  }
+}
+
+/* main menu */
+
+
+nav#nav-menu {
+  padding: 0;
+  padding-top: 100px;
+  font-size: 1.2em;
+}
+
+ul#main-navigation > li > a, .header_view .nav > li > a {
+  color: #fff;
+  font-weight: bold;
+  border: none;
+}
+
+ul#main-navigation > li > a:hover, ul#main-navigation > li.open > a {
+  background-color: #65C18C;
+  color: #fff;
+  border: none;
+}
+
+ul#main-navigation ul.dropdown-menu > li > a:hover {
+  background-color: #65C18C;
+}
+
+/* Frontpage image */
+
+/* main div#main-content div.homepage-image img.img-responsive {
+
+} */
+
+/* Hide search box */
+
+header nav#nav-menu div.pull-md-right {
+  display: none;
+}
+
+/* main container */
+
+main.pkp_structure_main {
+  border-left: 1px solid #ddd;
+  border-right: 1px solid #ddd;
+  padding-bottom: 4em;
+  padding-left: 25px;
+  padding-right: 25px;
+}
+
+main.pkp_structure_main div#main-content, div.content, div.page_privacy, footer.footer {
+  font: 1.1em/1.6em "Overpass", "Open Sans", Helvetica, sans-serif;
+  color: #333;
+  font-weight: 300;
+}
+
+
+/* footer */
+footer.footer {
+  margin-top: 0;
+  background: #123467;
+  color: #fff;
+}
+
+/* issue thumbnails */
+
+div.thumbnail {
+  border: none;
+}
+
+/* sidebar */
+
+/* submission block */
+
+aside#sidebar div#customblock-submitManuscript {
+  background-color: #df2935;
+}
+
+aside#sidebar div#customblock-submitManuscript h2 {
+  display: none;
+}
+
+aside#sidebar div#customblock-submitManuscript div.content {
+  text-align: center;
+}
+
+aside#sidebar div#customblock-submitManuscript div.content a {
+  border: none;
+  background: none;
+  font-weight: bold;
+  color: #fff;
+  text-transform: uppercase;
+  padding: 0;
+  font-size: 0;
+}
+
+aside#sidebar div#customblock-submitManuscript div.content a:after {
+  font-size: 18px;
+  content: "submit a manuscript";
+  vertical-align: middle;
+}
+
+aside#sidebar div#customblock-submitManuscript div.content p {
+  margin: 0;
+  vertical-align: middle;
+}
+
+/* guidelines block */
+
+aside#sidebar div#customblock-InformationLinks div.content div#InformationLinks-header {
+  padding: 15px;
+  margin-top: -15px;
+  margin-left: -15px;
+  margin-right: -15px;
+  margin-bottom: 15px;
+  background-color: #123467;
+  color: #fff;
+  text-transform: uppercase;
+  font-weight: bold;
+}
+
+aside#sidebar div.content {
+  font-size: 18px;
+}
+
+/* License notification */
+
+footer a:hover {
+  color: #fff;
+  /* text-decoration: underline; */
+}
+
+/* Alert box */
+
+.alert-info {
+  background-color: #123467;
+  border-color: #000;
+}
+
+.alert-info a:hover {
+  color: #65C18C;
+  text-decoration: underline;
+}
