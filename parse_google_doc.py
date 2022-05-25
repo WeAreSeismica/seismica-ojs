@@ -342,7 +342,6 @@ if __name__ == '__main__':
                 elif ing.name == 'ul':  # put this back in the hierarchy with the previous ol
                     prev = ingredients[k-1]  # should be ol
                     if prev.name == 'ol':
-                        try:
                         prev = idivtext.find_all('ol')[-1]
                         ul = ing.extract()
                         prev.append(ul)
