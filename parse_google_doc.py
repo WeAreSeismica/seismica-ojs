@@ -13,7 +13,7 @@ import os, sys
 # for OJS site with (nested?) dropdowns
 #
 # TODO:
-    # catch for any hdr2 sections that *start* with <ol> (ln 344, 'prev' etc) (this might be ok now?)
+    # catch for any hdr2 sections that *start* with <ol> or <ul> (ln 344, 'prev' etc)
     # re-combine oddly segmented nested lists? Might be more trouble than it's worth
     # nested accordions? at least for one spot in policies for data availability/types
         # and/or other things that are in paragraph-sections (could also reformat as ol post-google)
