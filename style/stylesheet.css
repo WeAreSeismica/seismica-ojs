@@ -65,7 +65,7 @@ div.navbar-header div.site-name {
 div.navbar-header :is(h1, div).site-name a.navbar-brand-logo {
   padding: 0;
   padding-left: 15px;
-  height: 120px;
+  height: 80px;
 }
 
 div.navbar-header :is(h1, div).site-name a.navbar-brand-logo img {
@@ -78,6 +78,7 @@ header#headerNavigationContainer div.container-fluid {
   margin-left: auto;
 }
 
+/* Header column width */
 @media (min-width: 768px) {
   header#headerNavigationContainer div.container-fluid {
     width: 750px;
