@@ -1,4 +1,5 @@
 import numpy as np
+import pandas as pd
 from bs4 import BeautifulSoup
 import cssutils as csu
 from copy import copy
@@ -8,13 +9,23 @@ import urllib
 import os, sys
 
 ####
-# parse google doc of guidelines or editorial policies (html download) and reformat
+# parse google doc of guidelines AND editorial policies (html download) and reformat
 # for OJS site with (nested?) dropdowns
 #
 # TODO:
+    # catch for any hdr2 sections that *start* with <ol> or <ul> (ln 344, 'prev' etc)
     # re-combine oddly segmented nested lists? Might be more trouble than it's worth
-    # nested accordions? at least for one spot in ed pol?
-#
+    # nested accordions? at least for one spot in policies for data availability/types
+        # and/or other things that are in paragraph-sections (could also reformat as ol post-google)
+# TODO for google doc formatting to make this work:
+    # links between sections and between different documents: numbers mean nothing
+    # weird italicized *Seismica*'s things in ed pol
+    # get rid of as many numbered lists as possible
+    # update links (esp cross-document) to the right things, un-highlight
+
+# for linking to open particular panels in accordion (same page only):
+# <p><a href="#collapseSeven" data-target="#collapseSeven" data-toggle="collapse" data-parent="#accordionExample">link to open seventh panel</a></p>
+
 # goal: something that looks like the following
 #
 #   <div id="accordionExample" class="accordion">
@@ -102,14 +113,21 @@ def get_h1_h2(ingredients):
     hdr1 has one extra element added for fenceposting
     """
     hdr1 = []; hdr2 = []
+    hdr1_text = []; hdr2_text = []
     for i,ing in enumerate(ingredients):
-        if bool(ing.h1):
+        if bool(ing.h1) or ing.name == 'h1':
             hdr1.append(i)
+            gettext = ing.text.lower()
+            gettext = re.sub(r'[^\w\s]','',gettext)  # strip out punctuation
+            hdr1_text.append(gettext.replace(' ','-'))  # (messes with acc)
         elif bool(ing.h2):
             hdr2.append(i)
+            gettext = ing.text.lower()
+            gettext = re.sub(r'[^\w\s]','',gettext)
+            hdr2_text.append(gettext.replace(' ','-'))
     hdr1.append(len(ingredients)+1)  # dummy entry for EOL
     hdr1 = np.array(hdr1); hdr2 = np.array(hdr2)
-    return hdr1, hdr2
+    return hdr1, hdr2, hdr1_text, hdr2_text
 
 def class_translate(sheet,css_keys,match='.c'):
     """
@@ -187,6 +205,35 @@ def nest_in_between(idivtext):
 
     return idivtext
 
+def nest_lis(idivtext):
+    """
+    put <p> and similar elements that fall in <ol> but not <li> in <li>
+    doesn't actually work at the moment (31 May 2022)
+    or maybe sort of works but would need to be run iteratively or something?
+    basically google docs does not understand lists with multiple paragraphs per <li>
+    """
+    ols = idivtext.find_all('ol',recursive=False)
+
+    for ol in ols:
+        lis = ol.find_all('li',recursive=False)
+        ing = ol.find_all(recursive=False)
+        if len(lis) != len(ing):  # there are elements that are not in list items
+            if len(lis) > 1:
+                for il in range(len(lis)-1):
+                    if lis[il].next_sibling.name != 'li':
+                        for g in lis[il].next_siblings:
+                            if g == lis[il+1]:
+                                break
+                            else:
+                                toadd = g.extract()
+                                lis[il].append(toadd)
+            else:
+                if lis[0].next_sibling.name != 'li':
+                    for g in lis[0].next_siblings:
+                        toadd = g.extract()
+                        lis[0].append(toadd)
+    return idivtext
+
 # here are some css tags that we want to translate, and how we want to translate them
 # NOTE <u> is maybe not best practice? Also here I think it only applies to hyperlinks.
 css_keys = {'font-weight':{'700':'strong'},\
@@ -209,25 +256,15 @@ if __name__ == '__main__':
     # if those aren't present, we ask for the info via input()
     parser = ArgumentParser()
     parser.add_argument('--ifile','-f',metavar='ifile',type=str,help='path to input file')
-    parser.add_argument('--isguide','-g',metavar='isguide',type=int,\
-            help='is this guidelines or not? True[1]/False[0]')
     args = parser.parse_args()
 
     ifile = args.ifile
     if ifile == None:
-        ifile = input('Enter path to input file: ') or 'TaskForce2_Guidelines.html'
+        ifile = input('Enter path to input file: ') or 'combined_doc.html'
     assert os.path.isfile(ifile),'file does not exist'
 
-    if args.isguide == None:
-        isguide = bool(input('Is this the guidelines file? [True/1]/False/0: ') or 1)
-    else:
-        isguide = bool(args.isguide)
-
     # set ofile names
-    if isguide:
-        ofile = 'out_guides.html'
-    else:
-        ofile = 'out_edpol.html'
+    ofile = 'out_allthings.html'
 
     # then:
     f = open(ifile,'r') # open html file
@@ -235,7 +272,7 @@ if __name__ == '__main__':
     f.close()
     soup = BeautifulSoup(text,'html.parser')  # parse to a soup
     header = soup.head.extract()
-    soup.img.decompose()  # get rid of the header image (seismica logo)
+    if bool(soup.img): soup.img.decompose()  # get rid of the header image (seismica logo)
         # (only for guidelines, but doesn't hurt ed pol b/c there are no images in it)
 
     # deal with css style in header, to some extent
@@ -285,45 +322,54 @@ if __name__ == '__main__':
     # go through body of soup element-wise, and deal with each in turn
     ingredients = soup.body.find_all(recursive=False)  # reset list
     # run through ingredients and map out where the headers and such are for overall structure
-    hdr1, hdr2 = get_h1_h2(ingredients)
+    hdr1, hdr2, h1text, h2text = get_h1_h2(ingredients)
 
+    everything = {}  # dict for holding content so we can transfer duplicates
     # SPLIT HERE for ed pol vs guidelines in main loop
-    if isguide:
-        for i in range(len(hdr1)-1):  # looping level 1 (Authors, Reviewers, Editors)
-            # put in h1 header for marking
-            h1 = ingredients[hdr1[i]]  # get the h1 element
-            new = bowl.new_tag('h1'); new.string = h1.text   # make a new tag for it
-            bowl.body.append(new)
+    for i in range(len(hdr1)-1):  # looping level 1 (Authors, Reviewers, Editors)
+        # put in h1 header for marking
+        h1 = ingredients[hdr1[i]]  # get the h1 element
+        new = bowl.new_tag('h1'); new.string = h1.text   # make a new tag for it
+        bowl.body.append(new)
 
-            # start building the accordion
-            acc_id = 'acc_%i' % i  # id
-            accord = bowl.new_tag('div'); accord.attrs = {'id':acc_id,'class':'accordion'}
-            bowl.body.append(accord)  # we'll insert elements as they are made
+        # start building the accordion
+        acc_id = 'acc_%s' % h1text[i]  # id from section head - long but at least not arbirtray
+        accord = bowl.new_tag('div'); accord.attrs = {'id':acc_id,'class':'accordion'}
+        bowl.body.append(accord)  # we'll insert elements as they are made
 
-            # go through the h2 markers, and between each, preserve whatever's there
-            ic = 0  # counter for collapsible headings
-            hdr2_use = hdr2[np.logical_and(hdr2>hdr1[i],hdr2<hdr1[i+1])]
-            hdr2_use = np.append(hdr2_use,hdr1[i+1])  # bookends again
-            for j in range(len(hdr2_use)-1):
-                icard = copy(card)
-                accord.append(icard)
-                ing = ingredients[hdr2_use[j]]
-                ispan = copy(span); ispan.string = ing.text.strip()
-                icard.insert(0,ispan)
-                ibutton = copy(button)
-                ibutton.attrs['data-target'] = '#collapse%02d' % ic
-                ibutton.attrs['aria-controls'] = 'collapse%02d' % ic
-                ispan.wrap(ibutton)
-                ih2 = copy(h2); ibutton.wrap(ih2)
-                idivhead = copy(divhead); idivhead.attrs['id'] = 'heading%02d' % ic
-                ih2.wrap(idivhead)
+        # go through the h2 markers, and between each, preserve whatever's there
+        ic = 0  # counter for collapsible headings
+        hdr2_use = hdr2[np.logical_and(hdr2>hdr1[i],hdr2<hdr1[i+1])]
+        hdr2_use = np.append(hdr2_use,hdr1[i+1])  # bookends again
+        h2t_use = np.array(h2text)[np.logical_and(hdr2>hdr1[i],hdr2<hdr1[i+1])]
+        h2t_use = np.append(h2t_use,'x')  # bookends again
+        for j in range(len(hdr2_use)-1):
+            icard = copy(card)
+            accord.append(icard)
+            ing = ingredients[hdr2_use[j]]
+            ispan = copy(span); ispan.string = ing.text.strip()
+            icard.insert(0,ispan)
+            ibutton = copy(button)
+            ibutton.attrs['data-target'] = '#%s' % h2t_use[j]
+            ibutton.attrs['aria-controls'] = '%s' % h2t_use[j]
+            ispan.wrap(ibutton)
+            ih2 = copy(h2); ibutton.wrap(ih2)
+            idivhead = copy(divhead); idivhead.attrs['id'] = 'heading%02d' % ic
+            ih2.wrap(idivhead)
 
-                idivcoll = copy(divcoll)
-                idivcoll.attrs['id'] = 'collapse%02d' % ic
-                idivcoll.attrs['aria-labelledby'] = 'heading%02d' % ic
-                idivcoll.attrs['data-parent'] = '#%s' % acc_id
-                icard.insert(1,idivcoll)
+            idivcoll = copy(divcoll)
+            idivcoll.attrs['id'] = '%s' % h2t_use[j]
+            idivcoll.attrs['aria-labelledby'] = 'heading%02d' % ic
+            idivcoll.attrs['data-parent'] = '#%s' % acc_id
+            icard.insert(1,idivcoll)
 
+
+            # check if this content already exists in a previous accordion
+            if len(everything) > 0 and h2t_use[j] in everything.keys():
+                idivtext = copy(everything[h2t_use[j]])
+                idivcoll.insert(0,idivtext)
+                ic += 1
+            else:
                 idivtext = copy(divtext)
                 idivcoll.insert(0,idivtext)
                 ic += 1
@@ -362,10 +408,8 @@ if __name__ == '__main__':
                 # check <ol>s within this card; if the first one has start != 1, reset it
                 # (this happens at one particular point in the reviewer guidelines at the moment)
                 ols = idivtext.find_all('ol')
-                if len(ols) > 0:
-                    ol = ols[0]
-                    if ol.attrs['start'] != '1':
-                        ol.attrs['start'] = '1'
+                if len(ols) > 0 and ols[0].attrs['start'] != 1:
+                    ols[0].attrs['start'] = '1'
 
                 # check if we need to recursively nest any ols
                 if check_whose(idivtext):
@@ -390,93 +434,9 @@ if __name__ == '__main__':
 
                 # nest extra bits (<p> etc) one more time now that numbers are matched
                 idivtext = nest_in_between(idivtext)
+                #idivtext = nest_lis(idivtext)
 
-    else:  # editorial policies
-        # start building the accordion for everything
-        acc_id = 'acc_0' # there's only one accordion for all edpol (the zeroth one)
-        accord = bowl.new_tag('div'); accord.attrs = {'id':acc_id,'class':'accordion'}
-        bowl.body.append(accord)  # we'll insert elements as they are made
-        for ic in range(len(hdr1)-1):  # looping level 1 (section headings)
-            h1 = ingredients[hdr1[ic]].h1
-            icard = copy(card)
-            accord.append(icard)
-            ing = ingredients[hdr1[ic]]
-            ispan = copy(span); ispan.string = ing.text.strip()
-            icard.insert(0,ispan)
-            ibutton = copy(button)
-            ibutton.attrs['data-target'] = '#collapse%02d' % ic
-            ibutton.attrs['aria-controls'] = 'collapse%02d' % ic
-            ispan.wrap(ibutton)
-            idivhead = copy(divhead); idivhead.attrs['id'] = 'heading%02d' % ic
-            ibutton.wrap(idivhead)
-
-            idivcoll = copy(divcoll)
-            idivcoll.attrs['id'] = 'collapse%02d' % ic
-            idivcoll.attrs['aria-labelledby'] = 'heading%02d' % ic
-            idivcoll.attrs['data-parent'] = '#%s' % acc_id
-            icard.insert(1,idivcoll)
-
-            idivtext = copy(divtext)
-            idivcoll.insert(0,idivtext)
-
-            for k in range(hdr1[ic]+1,hdr1[ic+1]):
-                try:
-                    ing = ingredients[k]
-                except IndexError:  # reached end of list, hopefully
-                    break
-                # if we don't break things, move on to check this element
-                if ing.name == 'table':
-                    ing.attrs['class'] = 'table'
-                    if not bool(ing.thead):  # no header line, need to make the first row a header
-                        first_row = ing.tr.extract()
-                        thead = bowl.new_tag('thead')
-                        ing.insert(0,thead)
-                        thead.append(first_row)
-                        for td in first_row.find_all('td'): 
-                            td.wrap(bowl.new_tag('th')) 
-                            td.unwrap() 
-                    idivtext.append(ing)
-
-                elif ing.name == 'ul':  # put in the hierarchy with the previous ol, if there is one
-                    prev = ingredients[k-1]
-                    if prev.name == 'ol':   # check if previous actually is ol (edpol has fewer nests)
-                        prev = idivtext.find_all('ol')[-1]
-                        ul = ing.extract()
-                        prev.append(ul)
-                    else:
-                        idivtext.append(ing)
-
-                else:
-                    idivtext.append(ing)
-            # check <ol>s within this card; if the first one has start != 1, reset it
-            # (this happens at one particular point in the reviewer guidelines at the moment)
-            ols = idivtext.find_all('ol')
-            if len(ols) > 0:
-                ol = ols[0]
-                if ol.attrs['start'] != '1':
-                    ol.attrs['start'] = '1'
-
-            # check if we need to recursively nest any ols
-            if check_whose(idivtext):
-                idivtext = nest_in_between(idivtext)
-            else:
-                # there's a mis-nested thing here; deal with it
-                iq = False
-                while not iq:
-                    olstart = ol_list[np.where(whose == False)[0][0]]  # this should not work??
-                    iadd = True
-                    while iadd:
-                        toadd = olstart.next_sibling.extract()
-                        if toadd.name == 'ol':
-                            iadd = False
-                        olstart.append(toadd)
-                    ol_list,sts,lis = ol_info(idivtext)
-                    whose = np.cumsum(lis)[:-1] + 1 == sts[1:]
-                    if np.all(whose):
-                        iq = True
-
-            # nest extra bits (<p> etc) one more time now that numbers are matched
-            idivtext = nest_in_between(idivtext)
+                everything[h2t_use[j]] = idivtext  # save in case this is duplicated
 
     # unwrap hyperlinks that google has wrapped with extra stuff
     links = bowl.find_all(_has_href)
