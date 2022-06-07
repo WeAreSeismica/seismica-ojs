@@ -9,32 +9,11 @@ import os, sys
 
 ####
 # parse google doc of faq (html download) and reformat
-# for OJS site with dropdowns
+# for OJS site with anchor links (instead of collapsible headings)
 #
 # TODO:
     # cleanup, tests
-    # figure out line breaks for buttons/cards? Is that possible or do all Qs need to be short?
-#
-# goal: something that looks like the following
-#
-#   <div id="accordionExample" class="accordion">
-#   <div class="card">
-#   <div id="headingOne" class="card-header">
-#   <h2 class="mb-0"><button class="btn btn-lg btn-light btn-block collapsed" type="button" data-toggle="collapse" data-target="#collapseOne" aria-expanded="false" aria-controls="collapseOne"> <span class="pull-left"> heading here </span> </button></h2>
-#   </div>
-#   <div id="collapseOne" class="collapse" aria-labelledby="headingOne" data-parent="#accordionExample">
-#   <div class="card-body">text here</div>
-#   </div>
-#   </div>
-#   <div class="card">
-#   <div id="headingTwo" class="card-header">
-#   <h2 class="mb-0"><button class="btn btn-lg btn-light btn-block collapsed" type="button" data-toggle="collapse" data-target="#collapseTwo" aria-expanded="false" aria-controls="collapseTwo"> <span class="pull-left"> heading here </span> </button></h2>
-#   </div>
-#   <div id="collapseTwo" class="collapse" aria-labelledby="headingTwo" data-parent="#accordionExample">
-#   <div class="card-body">text here</div>
-#   </div>
-#   </div>
-#   </div>
+    # figure out line breaks for answers if we want multiple paragraphs
 #
 ####
 
@@ -166,7 +145,7 @@ if __name__ == '__main__':
     assert os.path.isfile(ifile),'file does not exist'
 
     # set ofile names
-    ofile = 'out_faq.html'
+    ofile = 'test.html'  # 'out_faq.html'
 
     # then:
     f = open(ifile,'r') # open html file
@@ -204,23 +183,19 @@ if __name__ == '__main__':
     bowl.body.clear()
     del bowl.body['class']  # for neatness
 
-    # set up generic accordion tags that can be modified later
-    span = bowl.new_tag('span'); span.attrs['class'] = 'pull-left'; span.string = 'heading here'
-    button = bowl.new_tag('button')
-    button.attrs = {'class':"btn btn-lg btn-light btn-block collapsed",\
-                    'type':'button',\
-                    'data-toggle':'collapse',\
-                    'data-target':'#collapse01',\
-                    'aria-expanded':'false',\
-                    'aria-controls':'collapse01'}
-    h2 = bowl.new_tag('h2'); h2.attrs['class'] = 'mb-0'
-    divhead = bowl.new_tag('div'); divhead.attrs = {'id':'heading01','class':'card-header'}
-    divcoll = bowl.new_tag('div')
-    divcoll.attrs = {'id':'collapse01','class':'collapse','aria-labelledby':'heading01',\
-                    'data-parent':'#accid'}
-    divtext = bowl.new_tag('div'); divtext.attrs['class'] = 'card-body';# divtext.string = 'text here'
-    card = bowl.new_tag('div'); card.attrs['class'] = 'card'
+    # set up generic tags for each anchor
+    hdiv = bowl.new_tag('div'); hdiv.attrs['class'] = 'heading-wrapper'
+    hashspan = bowl.new_tag('span'); hashspan.attrs['aria-hidden'] = 'true'; hashspan.string = '#'
+    hashspan.attrs['class'] = 'anchor-icon'
+    Qspan = bowl.new_tag('span'); Qspan.string = 'title here'; # Qspan.attrs['class'] = 'hidden'
+    alink = bowl.new_tag('a'); alink.attrs['href'] = '#title'; alink.attrs['class'] = 'anchor-link'
+    h2 = bowl.new_tag('h2'); h2.attrs['id'] = 'title'; h2.string = 'title'
 
+    # set up ul and li for table of contents
+    contents = bowl.new_tag('ul')
+    li = bowl.new_tag('li')
+    lia = bowl.new_tag('a')
+    
     # go through body of soup element-wise, and deal with each in turn
     ingredients = soup.body.find_all(recursive=False)  # reset list
 
@@ -228,49 +203,54 @@ if __name__ == '__main__':
     Qind,Aind = get_Q_A(ingredients)
     Qind.append(len(ingredients))
 
-    # start building the accordion
-    acc_id = 'acc_0'
-    accord = bowl.new_tag('div'); accord.attrs = {'id':acc_id,'class':'accordion'}
-    bowl.body.append(accord)  # we'll insert elements as they are made
-    ic = 0  # counter for collapsible headings
+    # start filling the bowl
     for i in range(len(Qind)-1):  # looping questions
-        # put in h1 header for marking
+
         ing = ingredients[Qind[i]]  # get the question element
 
+        qtag = ing.string.lstrip('Q.').lstrip().rstrip('?').replace(' ','-') # set up identifier text
+
+        # set up styling div
+        idiv = copy(hdiv)
+        bowl.body.append(idiv)
+
+        # set up header with Q info, add to bowl
+        ih2 = copy(h2); ih2.attrs['id'] = qtag
+        ih2.string = ing.string.lstrip('Q.').lstrip()
+        ia = copy(alink); ia.attrs['href'] = '#%s' % qtag
+        is1 = copy(hashspan);
+        is2 = copy(Qspan); is2.string = ih2.string;
+
+        ia.extend([is1,is2])
+        idiv.extend([ih2,ia])
+
+        is2.attrs['class'] = 'hidden'
+
+        # add li to contents
+        ili = copy(li)
+        ilia = copy(lia); ilia.attrs['href'] = '#%s' % qtag; 
+        ilia.string = ing.string.lstrip('Q.').lstrip()
+        ili.append(ilia)
+        contents.extend([ili])
+
         # go through the A markers, and between each, preserve whatever's there
-        icard = copy(card)
-        accord.append(icard)
-        ispan = copy(span); ispan.string = ing.text.strip().split('Q. ')[1]
-        icard.insert(0,ispan)
-        ibutton = copy(button)
-        ibutton.attrs['data-target'] = '#collapse%02d' % ic
-        ibutton.attrs['aria-controls'] = 'collapse%02d' % ic
-        ispan.wrap(ibutton)
-        ih2 = copy(h2); ibutton.wrap(ih2)
-        idivhead = copy(divhead); idivhead.attrs['id'] = 'heading%02d' % ic
-        ih2.wrap(idivhead)
-
-        idivcoll = copy(divcoll)
-        idivcoll.attrs['id'] = 'collapse%02d' % ic
-        idivcoll.attrs['aria-labelledby'] = 'heading%02d' % ic
-        idivcoll.attrs['data-parent'] = '#%s' % acc_id
-        icard.insert(1,idivcoll)
-
-        idivtext = copy(divtext)
-        idivcoll.insert(0,idivtext)
-        ic += 1
 
         for j in range(Qind[i]+1,Qind[i+1]):
             if ingredients[j].strong.text.startswith('A'):
                 _ = ingredients[j].strong.extract()
-            idivtext.append(ingredients[j])
+            bowl.body.append(ingredients[j])
 
     # unwrap hyperlinks that google has wrapped with extra stuff
     links = bowl.find_all(_has_href)
     for link in links:
-        if link.attrs['href'].startswith('#ftnt') or link.attrs['href'].startswith('mailto'):
+        if link.attrs['href'].startswith('#') or link.attrs['href'].startswith('mailto'):
             continue
         link.attrs['href'] = urllib.parse.unquote(link.attrs['href'].split('?q=')[1].split('&')[0])
+
+    # add the table of contents to the top
+    chead = bowl.new_tag('h2'); chead.string = 'Contents:'
+    bowl.body.insert(0,contents)
+    bowl.body.insert(0,chead)
 
     # write
     bowl.smooth()

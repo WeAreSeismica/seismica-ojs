@@ -1,0 +1,33 @@
+.hidden:not(:focus):not(:active) {
+  clip: rect(1px,1px,1px,1px) !important;
+  border-width: 0 !important;
+  height: 1px !important;
+  overflow: hidden !important;
+  padding: 0 !important;
+  position: absolute !important;
+  white-space: nowrap !important;
+  width: 1px !important;
+}
+
+heading-wrapper {
+  position: relative;
+}
+
+.anchor-link {
+  position: absolute;
+  left: 1%;
+}
+.anchor-link {
+  background-repeat: no-repeat;
+  display: inline-block;
+  height: 1rem;
+  width: 1rem;
+}
+.anchor-icon {
+  left: -3px;
+  top: -46px;
+}
+.anchor-icon {
+  left: 3px;
+  position: relative;
+}
