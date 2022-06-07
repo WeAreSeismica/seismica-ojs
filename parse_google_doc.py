@@ -22,31 +22,8 @@ import os, sys
     # weird italicized *Seismica*'s things in ed pol
     # get rid of as many numbered lists as possible
     # update links (esp cross-document) to the right things, un-highlight
+    # can we fix the excess spaces around formatted text without doing stupid amounts of work?
 
-# for linking to open particular panels in accordion (same page only):
-# <p><a href="#collapseSeven" data-target="#collapseSeven" data-toggle="collapse" data-parent="#accordionExample">link to open seventh panel</a></p>
-
-# goal: something that looks like the following
-#
-#   <div id="accordionExample" class="accordion">
-#   <div class="card">
-#   <div id="headingOne" class="card-header">
-#   <h2 class="mb-0"><button class="btn btn-lg btn-light btn-block collapsed" type="button" data-toggle="collapse" data-target="#collapseOne" aria-expanded="false" aria-controls="collapseOne"> <span class="pull-left"> heading here </span> </button></h2>
-#   </div>
-#   <div id="collapseOne" class="collapse" aria-labelledby="headingOne" data-parent="#accordionExample">
-#   <div class="card-body">text here</div>
-#   </div>
-#   </div>
-#   <div class="card">
-#   <div id="headingTwo" class="card-header">
-#   <h2 class="mb-0"><button class="btn btn-lg btn-light btn-block collapsed" type="button" data-toggle="collapse" data-target="#collapseTwo" aria-expanded="false" aria-controls="collapseTwo"> <span class="pull-left"> heading here </span> </button></h2>
-#   </div>
-#   <div id="collapseTwo" class="collapse" aria-labelledby="headingTwo" data-parent="#accordionExample">
-#   <div class="card-body">text here</div>
-#   </div>
-#   </div>
-#   </div>
-#
 ####
 
 def strip_comments(soup,cmt_class):
@@ -264,7 +241,7 @@ if __name__ == '__main__':
     assert os.path.isfile(ifile),'file does not exist'
 
     # set ofile names
-    ofile = 'out_allthings.html'
+    ofile = 'test2.html' # 'out_allthings.html'
 
     # then:
     f = open(ifile,'r') # open html file
@@ -302,22 +279,19 @@ if __name__ == '__main__':
     bowl.body.clear()
     del bowl.body['class']  # for neatness
 
-    # set up generic accordion tags that can be modified later
-    span = bowl.new_tag('span'); span.attrs['class'] = 'pull-left'; span.string = 'heading here'
-    button = bowl.new_tag('button')
-    button.attrs = {'class':"btn btn-lg btn-light btn-block collapsed",\
-                    'type':'button',\
-                    'data-toggle':'collapse',\
-                    'data-target':'#collapse01',\
-                    'aria-expanded':'false',\
-                    'aria-controls':'collapse01'}
-    h2 = bowl.new_tag('h2'); h2.attrs['class'] = 'mb-0'
-    divhead = bowl.new_tag('div'); divhead.attrs = {'id':'heading01','class':'card-header'}
-    divcoll = bowl.new_tag('div')
-    divcoll.attrs = {'id':'collapse01','class':'collapse','aria-labelledby':'heading01',\
-                    'data-parent':'#accid'}
-    divtext = bowl.new_tag('div'); divtext.attrs['class'] = 'card-body';# divtext.string = 'text here'
-    card = bowl.new_tag('div'); card.attrs['class'] = 'card'
+    # set up generic tags for each anchor
+    hdiv = bowl.new_tag('div'); hdiv.attrs['class'] = 'heading-wrapper'
+    hashspan = bowl.new_tag('span'); hashspan.attrs['aria-hidden'] = 'true'; hashspan.string = '#'
+    hashspan.attrs['class'] = 'anchor-icon'
+    Qspan = bowl.new_tag('span'); Qspan.string = 'title here'; # Qspan.attrs['class'] = 'hidden'
+    alink = bowl.new_tag('a'); alink.attrs['href'] = '#title'; alink.attrs['class'] = 'anchor-link'
+    h2 = bowl.new_tag('h2'); h2.attrs['id'] = 'title'; h2.string = 'title'
+    divtext = bowl.new_tag('div')
+
+    # set up ul and li for table of contents
+    contents = bowl.new_tag('ul')
+    li = bowl.new_tag('li')
+    lia = bowl.new_tag('a')
 
     # go through body of soup element-wise, and deal with each in turn
     ingredients = soup.body.find_all(recursive=False)  # reset list
@@ -325,17 +299,12 @@ if __name__ == '__main__':
     hdr1, hdr2, h1text, h2text = get_h1_h2(ingredients)
 
     everything = {}  # dict for holding content so we can transfer duplicates
-    # SPLIT HERE for ed pol vs guidelines in main loop
+    # start adding things to the bowl
     for i in range(len(hdr1)-1):  # looping level 1 (Authors, Reviewers, Editors)
         # put in h1 header for marking
         h1 = ingredients[hdr1[i]]  # get the h1 element
         new = bowl.new_tag('h1'); new.string = h1.text   # make a new tag for it
-        bowl.body.append(new)
-
-        # start building the accordion
-        acc_id = 'acc_%s' % h1text[i]  # id from section head - long but at least not arbirtray
-        accord = bowl.new_tag('div'); accord.attrs = {'id':acc_id,'class':'accordion'}
-        bowl.body.append(accord)  # we'll insert elements as they are made
+        bowl.body.append(new)  # for large-scale section divisions
 
         # go through the h2 markers, and between each, preserve whatever's there
         ic = 0  # counter for collapsible headings
@@ -344,35 +313,39 @@ if __name__ == '__main__':
         h2t_use = np.array(h2text)[np.logical_and(hdr2>hdr1[i],hdr2<hdr1[i+1])]
         h2t_use = np.append(h2t_use,'x')  # bookends again
         for j in range(len(hdr2_use)-1):
-            icard = copy(card)
-            accord.append(icard)
+            
             ing = ingredients[hdr2_use[j]]
-            ispan = copy(span); ispan.string = ing.text.strip()
-            icard.insert(0,ispan)
-            ibutton = copy(button)
-            ibutton.attrs['data-target'] = '#%s' % h2t_use[j]
-            ibutton.attrs['aria-controls'] = '%s' % h2t_use[j]
-            ispan.wrap(ibutton)
-            ih2 = copy(h2); ibutton.wrap(ih2)
-            idivhead = copy(divhead); idivhead.attrs['id'] = 'heading%02d' % ic
-            ih2.wrap(idivhead)
 
-            idivcoll = copy(divcoll)
-            idivcoll.attrs['id'] = '%s' % h2t_use[j]
-            idivcoll.attrs['aria-labelledby'] = 'heading%02d' % ic
-            idivcoll.attrs['data-parent'] = '#%s' % acc_id
-            icard.insert(1,idivcoll)
+            itag = h2t_use[j]  # already replaced ' ' with '-'
 
+            # set up styling div
+            idiv = copy(hdiv)
+            bowl.body.append(idiv)
+
+            # set up h2, add to bowl
+            ih2 = copy(h2); ih2.attrs['id'] = itag
+            ih2.string = ing.text.strip()
+            ia = copy(alink); ia.attrs['href'] = '#%s' % itag
+            is1 = copy(hashspan);
+            is2 = copy(Qspan); is2.string = ih2.string;
+
+            ia.extend([is1,is2])
+            idiv.extend([ih2,ia])
+
+            is2.attrs['class'] = 'hidden'
+
+            # add li to contents
+            ili = copy(li)
+            ilia = copy(lia); ilia.attrs['href'] = '#%s' % itag; 
+            ilia.string = ing.text.strip()
+            ili.append(ilia)
+            contents.extend([ili])
 
             # check if this content already exists in a previous accordion
             if len(everything) > 0 and h2t_use[j] in everything.keys():
                 idivtext = copy(everything[h2t_use[j]])
-                idivcoll.insert(0,idivtext)
-                ic += 1
             else:
                 idivtext = copy(divtext)
-                idivcoll.insert(0,idivtext)
-                ic += 1
 
                 for k in range(hdr2_use[j]+1,hdr2_use[j+1]):
                     try:
@@ -438,10 +411,13 @@ if __name__ == '__main__':
 
                 everything[h2t_use[j]] = idivtext  # save in case this is duplicated
 
+            bowl.body.append(idivtext)
+
+
     # unwrap hyperlinks that google has wrapped with extra stuff
     links = bowl.find_all(_has_href)
     for link in links:
-        if link.attrs['href'].startswith('#ftnt') or link.attrs['href'].startswith('mailto'):
+        if link.attrs['href'].startswith('#') or link.attrs['href'].startswith('mailto'):
             continue
         link.attrs['href'] = urllib.parse.unquote(link.attrs['href'].split('?q=')[1].split('&')[0])
 
