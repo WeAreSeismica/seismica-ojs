@@ -288,10 +288,7 @@ if __name__ == '__main__':
     h2 = bowl.new_tag('h2'); h2.attrs['id'] = 'title'; h2.string = 'title'
     divtext = bowl.new_tag('div')
 
-    # set up ul and li for table of contents
-    contents = bowl.new_tag('ul')
-    li = bowl.new_tag('li')
-    lia = bowl.new_tag('a')
+
 
     # go through body of soup element-wise, and deal with each in turn
     ingredients = soup.body.find_all(recursive=False)  # reset list
@@ -305,6 +302,12 @@ if __name__ == '__main__':
         h1 = ingredients[hdr1[i]]  # get the h1 element
         new = bowl.new_tag('h1'); new.string = h1.text   # make a new tag for it
         bowl.body.append(new)  # for large-scale section divisions
+
+        # set up ul and li for table of contents
+        contents = bowl.new_tag('ul')
+        li = bowl.new_tag('li')
+        lia = bowl.new_tag('a')
+        bowl.body.append(contents)  # add the contents for this section after h1
 
         # go through the h2 markers, and between each, preserve whatever's there
         ic = 0  # counter for collapsible headings
