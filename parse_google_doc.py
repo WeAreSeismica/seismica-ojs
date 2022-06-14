@@ -241,7 +241,7 @@ if __name__ == '__main__':
     assert os.path.isfile(ifile),'file does not exist'
 
     # set ofile names
-    ofile = 'test2.html' # 'out_allthings.html'
+    ofile = 'out_allthings.html'
 
     # then:
     f = open(ifile,'r') # open html file
@@ -407,7 +407,7 @@ if __name__ == '__main__':
 
                 # nest extra bits (<p> etc) one more time now that numbers are matched
                 idivtext = nest_in_between(idivtext)
-                #idivtext = nest_lis(idivtext)
+                #idivtext = nest_lis(idivtext)  # this does not work, so I decided not to need it
 
                 everything[h2t_use[j]] = idivtext  # save in case this is duplicated
 
@@ -424,6 +424,7 @@ if __name__ == '__main__':
     # write
     bowl.smooth()
     f = open(ofile,'w')
-    f.write(bowl.prettify())
+    #f.write(bowl.prettify())   # for reading html
+    f.write(str(bowl))          # for actual display with proper spaces
     f.close()
 

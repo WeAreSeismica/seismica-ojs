@@ -146,7 +146,7 @@ if __name__ == '__main__':
     assert os.path.isfile(ifile),'file does not exist'
 
     # set ofile names
-    ofile = 'test.html'  # 'out_faq.html'
+    ofile = 'out_faq.html'
 
     # then:
     f = open(ifile,'r') # open html file
@@ -256,6 +256,7 @@ if __name__ == '__main__':
     # write
     bowl.smooth()
     f = open(ofile,'w')
-    f.write(bowl.prettify())
+    #f.write(bowl.prettify())   # for reading html and figuring out what is wrong
+    f.write(str(bowl))          # for actual writing with proper spaces
     f.close()
 
