@@ -445,9 +445,18 @@ if __name__ == '__main__':
             continue
         link.attrs['href'] = urllib.parse.unquote(link.attrs['href'].split('?q=')[1].split('&')[0])
 
+    # border the tables
+    for tab in bowl.find_all('table'):
+        tab.attrs['style'] = "border:1px solid black;border-collapse:collapse"
+    for th in bowl.find_all('th'):
+        th.attrs['style'] = "border:1px solid black"
+    for td in bowl.find_all('td'):
+        td.attrs['style'] = "border:1px solid black"
+
     # write
     bowl.smooth()
     f = open(ofile,'w')
-    f.write(bowl.prettify())
+    #f.write(bowl.prettify())
+    f.write(str(bowl))
     f.close()
 
