@@ -2,258 +2,212 @@
 /* css | https://seismicatest.library.mcgill.ca/$$$call$$$/page/page/css?name=bootstrapTheme-readable */
 /* seismica colors | #123466 [dark blue] #ffffff [white] #000000 [black] #65C18C [sea green] #cecd24 [citrine] #df2935 [red] */
 
-/* restyle buttons */
-.btn-primary {
-  /* background-color: #4582ec; */
-  /* border-color: #4582ec; */
-  background-color: #123467;
-  border-color: #fff;
-}
 
-.btn-primary:hover {
-  background-color: #65C18C;
-  color: #000;
-  border-color: #fff;
-}
 
 
 /* restyle hyperlink color */
 a {
-  /* color: #06c; */
-  /* color: #123467; */
   color: #65C18C;
 }
 
 a:hover {
-  /* color: #65C18C; */
   color: #123467;
 }
 
-aside#sidebar a {
-  color: #123467;
+
+/* Begin header */
+
+/* Adjust logo container to fit well on small and large devices */
+div.pkp_site_name {
+  top: -5px;
 }
 
-aside#sidebar a:hover {
-  color: #65C18C;
-}
-
-/* header/nav bar styling */
-.navbar-default, .header_view {
-  background-color: #123467;
-  /* border-color: #123467; */
-  border: none;
-  color: #fff;
-  border-radius: 0;
-}
-
-/* top user navigation */
-ul#navigationUser li a {
-  color: #65C18C;
-  /* font-weight: bold; */
-  /* color: #fff; */
-}
-
-div.navbar-header :is(h1, div).site-name {
-  position: absolute;
-  top: 0.5em;
-}
-
-div.navbar-header div.site-name {
-  top: 1.2em;
-}
-
-div.navbar-header :is(h1, div).site-name a.navbar-brand-logo {
-  padding: 0;
-  padding-left: 15px;
-  height: 80px;
-}
-
-div.navbar-header :is(h1, div).site-name a.navbar-brand-logo img {
+div.pkp_site_name a {
   height: 100%;
+  width: 100%;
 }
 
-/* overriding fluid container settings for header */
-header#headerNavigationContainer div.container-fluid {
-  margin-right: auto;
-  margin-left: auto;
-}
-
-/* Header column width */
-@media (min-width: 768px) {
-  header#headerNavigationContainer div.container-fluid {
-    width: 750px;
-  }
+div.pkp_site_name .is_img img {
+  max-height: 40px;
 }
 
 @media (min-width: 992px) {
-  header#headerNavigationContainer div.container-fluid {
-    width: 970px;
+  div.pkp_site_name {
+    top: -10px;
+    height: 80px;
+  }
+
+  div.pkp_site_name .is_img img {
+    max-height: 80px;
   }
 }
 
-@media (min-width: 1200px) {
-  header#headerNavigationContainer div.container-fluid {
-    width: 1170px;
-  }
-}
-
-/* main menu */
+/* End header */
 
 
-nav#nav-menu {
-  padding: 0;
-  padding-top: 100px;
+/* Begin main menu */
+
+/* Increase main item font size a tad */
+ul#navigationPrimary > li > a {
   font-size: 1.2em;
 }
 
-ul#main-navigation > li > a, .header_view .nav > li > a {
+/* Fix that annoying offset */
+@media (min-width: 992px) {
+  .pkp_navigation_primary > li:hover ul {
+    left: 0px;
+  }
+}
+
+/* Recolour submenu items */
+ul.dropdown-menu li a {
+  color: #000;
+  font-size: 1.0em;
+}
+
+/* Adjust hover background */
+ul.dropdown-menu li a:hover {
+  /* color: #65C18C; */
+  color: #000;
+  background: #fff;
+}
+
+/* End main menu */
+
+/* Begin user menu */
+/* End user menu */
+
+
+/* Begin side menu */
+
+div.pkp_block.block_custom {
+  font-size: 1.1em;
+  border-top: 1px solid #ddd;
+}
+
+div.pkp_block.block_custom a {
+  color: #123467;
+}
+
+div#customblock-InformationLinks div#InformationLinks-header {
+  font-weight: bold;
+}
+
+div#customblock-InformationLinks p {
+  margin-top: 0.5em;
+  margin-bottom: 0.5em;
+}
+
+div#customblock-submitManuscript div.content {
+  background-color: #df2935;
   color: #fff;
-  /* font-weight: bold; */
-  border: none;
+  font-weight: bold;
+  padding: 0.5em;
+  text-align: center;
 }
 
-ul#main-navigation > li > a:hover, ul#main-navigation > li.open > a {
-  /* background-color: #65C18C; */
+div#customblock-submitManuscript div.content a {
   color: #fff;
-  border: none;
+  font-weight: bold;
 }
 
-ul#main-navigation ul.dropdown-menu > li > a:hover {
-  background-color: #65C18C;
-}
+/* End side menu */
 
-/* Frontpage image */
-
-/* main div#main-content div.homepage-image img.img-responsive {
-
-} */
-
-/* Hide search box */
-
-header nav#nav-menu div.pull-md-right {
-  display: none;
-}
+/* Begin main content */
 
 /* Hide breadcrumbs */
-
 nav.cmp_breadcrumbs {
   display: none;
 }
 
-/* main container */
-
-main.pkp_structure_main {
-  border-left: 1px solid #ddd;
-  border-right: 1px solid #ddd;
-  padding-bottom: 4em;
-  padding-left: 25px;
-  padding-right: 25px;
+/* Format notifications */
+div.cmp_notification {
+  background-color: #eee;
+  border-color: #123466;
 }
 
-main.pkp_structure_main div#main-content, div.content, div.page_privacy, footer.footer {
-  font: 1.0em/1.6em "Overpass", "Open Sans", Helvetica, sans-serif;
-  color: #333;
-  font-weight: 300;
-}
+/* End main content */
 
-/* Fix page headers */
+/* Start (current) issue formating */
 
-div.page-header {
-  padding: 0;
-  margin: 0;
-  border: none;
-}
-
-:is(div.page-header, div.page) h1 {
-  padding-bottom: 10px;
-  margin: 44px 0 22px;
-  border-bottom: 1px solid #ddd;
-}
-
-
-/* footer */
-footer.footer {
-  margin-top: 0;
-  background: #123467;
-  color: #fff;
-}
-
-/* issue thumbnails */
-
-div.thumbnail {
-  border: none;
-}
-
-/* sidebar */
-
-/* submission block */
-
-aside#sidebar div#customblock-submitManuscript {
-  background-color: #df2935;
-}
-
-aside#sidebar div#customblock-submitManuscript h2 {
-  display: none;
-}
-
-aside#sidebar div#customblock-submitManuscript div.content {
-  text-align: center;
-}
-
-aside#sidebar div#customblock-submitManuscript div.content a {
-  border: none;
-  background: none;
-  font-weight: bold;
-  color: #fff;
-  text-transform: uppercase;
-  padding: 0;
-  font-size: 0;
-}
-
-aside#sidebar div#customblock-submitManuscript div.content a:after {
-  font-size: 18px;
-  content: "submit a manuscript";
-  vertical-align: middle;
-}
-
-aside#sidebar div#customblock-submitManuscript div.content p {
-  margin: 0;
-  vertical-align: middle;
-}
-
-/* guidelines block */
-
-aside#sidebar div#customblock-InformationLinks div.content div#InformationLinks-header {
-  padding: 15px;
-  margin-top: -15px;
-  margin-left: -15px;
-  margin-right: -15px;
-  margin-bottom: 15px;
-  background-color: #123467;
-  color: #fff;
-  text-transform: uppercase;
-  font-weight: bold;
-}
-
-aside#sidebar div.content {
-  font-size: 18px;
-}
-
-/* License notification */
-
-footer a:hover {
-  color: #fff;
-  /* text-decoration: underline; */
-}
-
-/* Alert box */
-
-.alert-info {
-  background-color: #123467;
-  border-color: #000;
-}
-
-.alert-info a:hover {
-  color: #65C18C;
+/* Make titles dark blue and underline for clarity */
+.obj_article_summary>.title a, a.title {
+  color: #123466;
   text-decoration: underline;
 }
+
+/* Recolour PDF/XML buttons */
+.cmp_button_wire, .obj_galley_link {
+  border-color: #65C18C;
+  color: #65C18C;
+}
+
+/* Hover PDF/XML buttons */
+.cmp_button_wire:hover, .obj_galley_link:hover {
+  background-color: #65C18C;
+  color: #fff;
+}
+
+/* Read more > and supplementary materials */
+.read_more, .obj_galley_link_supplementary {
+  color: #123466 !important;
+}
+
+/* Begin collapsible divs */
+
+div.accordion div.card h2 {
+  margin: 0;
+  margin-top: 1em;
+}
+
+div.accordion div.card div.card-header button {
+  width: 100%;
+  background-color: #fff;
+  padding: 0.5em;
+  border: 0;
+  font-weight: bold;
+  border: 1px solid #65C18C;
+  border-right: 0;
+  border-bottom: 0;
+}
+
+div.accordion div.card div.card-header.active button, div.accordion div.card div.card-header button:hover {
+  /* background-color: #65C18C; */
+  background-color: #eee;
+}
+
+div.accordion div.card div.collapse {
+  border-bottom: 1px solid #65C18C;
+  border-left: 1px solid #65C18C;
+  display: none; /* MODIFY THIS */
+}
+
+div.accordion div.card div.card-body {
+  padding-top: 1em;
+  padding-left: 2em;
+  padding-right: 0.5em;
+  padding-bottom: 2em;
+}
+
+div.accordion div.card div.card-body p {
+  margin-top: 0;
+}
+
+/* End collapsible divs */
+
+
+/* Begin footer */
+
+div.pkp_structure_footer_wrapper {
+  background: #123466;
+}
+
+div.pkp_structure_footer div.pkp_footer_content {
+  color: #fff;
+}
+
+div.pkp_structure_footer div.pkp_footer_content img {
+  width: 200px;
+}
+
+/* End footer */
