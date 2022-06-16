@@ -275,6 +275,7 @@ if __name__ == '__main__':
     # write
     bowl.smooth()
     f = open(ofile,'w')
-    f.write(bowl.prettify())
+    #f.write(bowl.prettify())
+    f.write(str(bowl))
     f.close()
 
