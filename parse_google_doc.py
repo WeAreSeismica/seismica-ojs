@@ -354,12 +354,12 @@ if __name__ == '__main__':
             ibutton.attrs['aria-controls'] = '%s' % h2t_use[j]
             ispan.wrap(ibutton)
             ih2 = copy(h2); ibutton.wrap(ih2)
-            idivhead = copy(divhead); idivhead.attrs['id'] = 'heading%02d' % ic
+            idivhead = copy(divhead); idivhead.attrs['id'] = '%s' % h2t_use[j] #'heading%02d' % ic
             ih2.wrap(idivhead)
 
             idivcoll = copy(divcoll)
             idivcoll.attrs['id'] = '%s' % h2t_use[j]
-            idivcoll.attrs['aria-labelledby'] = 'heading%02d' % ic
+            idivcoll.attrs['aria-labelledby'] = '%s' % h2t_use[j] # 'heading%02d' % ic
             idivcoll.attrs['data-parent'] = '#%s' % acc_id
             icard.insert(1,idivcoll)
 
